@@ -147,8 +147,8 @@ impl<'r> Data<'r> {
     /// }
     /// ```
     pub async fn peek(&mut self, num: usize) -> &[u8] {
-        let num = std::cmp::min(PEEK_BYTES, num);
         let mut len = self.buffer.len();
+        let num = std::cmp::min(len, num);
         if len >= num {
             return &self.buffer[..num];
         }
