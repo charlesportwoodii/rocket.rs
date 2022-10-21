@@ -51,7 +51,7 @@ impl<'r> Data<'r> {
         // kind of idle timeout should be implemented.
 
         let stream = stream.into();
-        let buffer = Vec::with_capacity(2 << 16);
+        let buffer = Vec::with_capacity(2<<16);
         Data { buffer, stream, is_complete: false }
     }
 
@@ -171,13 +171,17 @@ impl<'r> Data<'r> {
     /// with an empty stream
     /// Your Parser should be responsible for caching the body, and handling it.
     pub async fn read(&mut self, num: usize) -> &[u8] {
-        loop {
+        let mut len = 0;
+        while len < num{
             match self.stream.read_buf(&mut self.buffer).await {
-                Ok(0) => { dbg!("No bytes were read?"); break },
+                Ok(0) => { self.is_complete = true; break },
                 Ok(n) => {
-                    dbg!("More data is available");
+                    len += n
                 },
-                Err(error) => {}
+                Err(e) => {
+                    error_!("Failed to read into peek buffer: {:?}.", e);
+                    break;
+                }
             }
         }
 
