@@ -2,6 +2,7 @@ use std::io;
 use std::sync::Arc;
 use std::time::Duration;
 
+use ubyte::ToByteUnit;
 use yansi::Paint;
 use tokio::sync::oneshot;
 use tokio::time::sleep;
@@ -21,6 +22,7 @@ use crate::http::private::{TcpListener, Listener, Connection, Incoming};
 // A token returned to force the execution of one method before another.
 pub(crate) struct RequestToken;
 
+pub struct HyperRawBodyBytes(pub Vec<u8>);
 async fn handle<Fut, T, F>(name: Option<&str>, run: F) -> Option<T>
     where F: FnOnce() -> Fut, Fut: Future<Output = T>,
 {
@@ -73,11 +75,18 @@ async fn hyper_service_fn(
 
     tokio::spawn(async move {
         // Convert a Hyper request into a Rocket request.
-        let (h_parts, mut h_body) = hyp_req.into_parts();
+        let (h_parts, h_body) = hyp_req.into_parts();
         match Request::from_hyp(&rocket, &h_parts, Some(conn)) {
             Ok(mut req) => {
-                // Convert into Rocket `Data`, dispatch request, write response.
-                let mut data = Data::from(&mut h_body);
+                let body_bytes = hyper::body::to_bytes(h_body).await.unwrap();
+                let b = &body_bytes.to_vec();
+                info!("Process body request:");
+                let body = hyper::Body::from(body_bytes);
+                let request_copy = hyper::Request::new(body);
+                let (_, mut h_body2) = request_copy.into_parts();
+                let mut data = Data::from(&mut h_body2);
+                req.local_cache(|| HyperRawBodyBytes(b.to_owned()));
+
                 let token = rocket.preprocess_request(&mut req, &mut data).await;
                 let response = rocket.dispatch(token, &mut req, data).await;
                 rocket.send_response(response, tx).await;

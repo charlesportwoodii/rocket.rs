@@ -189,6 +189,7 @@ pub use crate::rocket::Rocket;
 pub use crate::request::Request;
 pub use crate::shutdown::Shutdown;
 pub use crate::state::State;
+pub use server::HyperRawBodyBytes;
 
 /// Creates a [`Rocket`] instance with the default config provider: aliases
 /// [`Rocket::build()`].

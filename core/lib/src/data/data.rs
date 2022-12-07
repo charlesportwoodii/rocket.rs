@@ -1,3 +1,5 @@
+use std::io::{self, Write};
+
 use crate::tokio::io::AsyncReadExt;
 use crate::data::data_stream::DataStream;
 use crate::data::{ByteUnit, StreamReader};
@@ -51,7 +53,7 @@ impl<'r> Data<'r> {
         // kind of idle timeout should be implemented.
 
         let stream = stream.into();
-        let buffer = Vec::with_capacity(2<<23);
+        let buffer = Vec::with_capacity(512);
         Data { buffer, stream, is_complete: false }
     }
 
@@ -165,39 +167,6 @@ impl<'r> Data<'r> {
         }
 
         &self.buffer[..std::cmp::min(len, num)]
-    }
-
-    /// Completely reads the body from the stream, and replaces the stream
-    /// with an empty stream
-    /// Your Parser should be responsible for caching the body, and handling it.
-    pub async fn read(&mut self, num: usize) -> &[u8] {
-        let mut len = 0;
-        while len < num{
-            match self.stream.read_buf(&mut self.buffer).await {
-                Ok(0) => { self.is_complete = true; break },
-                Ok(n) => {
-                    len += n
-                },
-                Err(e) => {
-                    error_!("Failed to read into peek buffer: {:?}.", e);
-                    break;
-                }
-            }
-        }
-
-        self.stream = super::StreamReader::empty();
-
-        // let data = Self::from(BufReader::new(self.buffer.clone()));
-        return &self.buffer[0..self.buffer.len()];
-    }
-
-    /// Caller to consistently retrieve the cached body
-    pub async fn get_body(&mut self, num: usize) -> &[u8] {
-        if self.buffer.len() == 0 {
-            self.read(num).await;
-        }
-
-        &self.buffer
     }
 
     /// Returns true if the `peek` buffer contains all of the data in the body
