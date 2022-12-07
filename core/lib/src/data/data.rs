@@ -51,7 +51,7 @@ impl<'r> Data<'r> {
         // kind of idle timeout should be implemented.
 
         let stream = stream.into();
-        let buffer = Vec::with_capacity(2<<16);
+        let buffer = Vec::with_capacity(2<<20);
         Data { buffer, stream, is_complete: false }
     }
 
