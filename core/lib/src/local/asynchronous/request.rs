@@ -91,6 +91,7 @@ impl<'c> LocalRequest<'c> {
             }
         }
 
+        self.request.local_cache(|| crate::HyperRawBodyBytes(self.data.clone()));
         // Actually dispatch the request.
         let mut data = Data::local(self.data);
         let token = rocket.preprocess_request(&mut self.request, &mut data).await;
