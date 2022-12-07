@@ -1,5 +1,3 @@
-use std::io::{self, Write};
-
 use crate::tokio::io::AsyncReadExt;
 use crate::data::data_stream::DataStream;
 use crate::data::{ByteUnit, StreamReader};
@@ -53,7 +51,7 @@ impl<'r> Data<'r> {
         // kind of idle timeout should be implemented.
 
         let stream = stream.into();
-        let buffer = Vec::with_capacity(512);
+        let buffer = Vec::with_capacity(PEEK_BYTES / 8);
         Data { buffer, stream, is_complete: false }
     }
 

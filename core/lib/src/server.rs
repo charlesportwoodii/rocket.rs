@@ -80,7 +80,6 @@ async fn hyper_service_fn(
             Ok(mut req) => {
                 let body_bytes = hyper::body::to_bytes(h_body).await.unwrap();
                 let b = &body_bytes.to_vec();
-                info!("Process body request:");
                 let body = hyper::Body::from(body_bytes);
                 let request_copy = hyper::Request::new(body);
                 let (_, mut h_body2) = request_copy.into_parts();
