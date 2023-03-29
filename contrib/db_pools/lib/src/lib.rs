@@ -7,7 +7,7 @@
 //!
 //!    ```toml
 //!    [dependencies.rocket_db_pools]
-//!    version = "0.1.0-rc.2"
+//!    version = "=0.1.0-rc.3"
 //!    features = ["sqlx_sqlite"]
 //!    ```
 //!
@@ -156,7 +156,7 @@
 //! features = ["macros", "offline", "migrate"]
 //!
 //! [dependencies.rocket_db_pools]
-//! version = "0.1.0-rc.2"
+//! version = "=0.1.0-rc.3"
 //! features = ["sqlx_sqlite"]
 //! ```
 //!
@@ -191,7 +191,7 @@
 //!
 //! ## Driver Defaults
 //!
-//! Some drivers provide configuration defaults different from the underyling
+//! Some drivers provide configuration defaults different from the underlying
 //! database's defaults. A best-effort attempt is made to document those
 //! differences below:
 //!
@@ -216,7 +216,7 @@
 //!
 //! # Extending
 //!
-//! Any database driver can implement support for this libary by implementing
+//! Any database driver can implement support for this library by implementing
 //! the [`Pool`] trait.
 
 #![doc(html_root_url = "https://api.rocket.rs/master/rocket_db_pools")]

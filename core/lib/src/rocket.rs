@@ -66,7 +66,7 @@ use crate::log::PaintExt;
 ///   }
 ///   ```
 ///
-/// This generates a `main` funcion with an `async` runtime that runs the
+/// This generates a `main` function with an `async` runtime that runs the
 /// returned `Rocket` instance.
 ///
 /// * **Manual Launching**
@@ -197,7 +197,7 @@ impl Rocket<Build> {
     /// A [`Figment`] generated from the current `provider` can _always_ be
     /// retrieved via [`Rocket::figment()`]. However, because the provider can
     /// be changed at any point prior to ignition, a [`Config`] can only be
-    /// retrieved in the ignite or orbit phases, or by manually extracing one
+    /// retrieved in the ignite or orbit phases, or by manually extracting one
     /// from a particular figment.
     ///
     /// # Example
@@ -366,7 +366,7 @@ impl Rocket<Build> {
     ///     "Whoops! Looks like we messed up."
     /// }
     ///
-    /// #[catch(400)]
+    /// #[catch(404)]
     /// fn not_found(req: &Request) -> String {
     ///     format!("I couldn't find '{}'. Try something else?", req.uri())
     /// }
@@ -435,14 +435,14 @@ impl Rocket<Build> {
         let type_name = std::any::type_name::<T>();
         if !self.state.set(state) {
             error!("state for type '{}' is already being managed", type_name);
-            panic!("aborting due to duplicately managed state");
+            panic!("aborting due to duplicated managed state");
         }
 
         self
     }
 
     /// Attaches a fairing to this instance of Rocket. No fairings are eagerly
-    /// excuted; fairings are executed at their appropriate time.
+    /// executed; fairings are executed at their appropriate time.
     ///
     /// If the attached fairing is _fungible_ and a fairing of the same name
     /// already exists, this fairing replaces it.
@@ -530,7 +530,11 @@ impl Rocket<Build> {
                 config.secret_key = crate::config::SecretKey::generate()
                     .unwrap_or_else(crate::config::SecretKey::zero);
             }
-        };
+        } else if config.known_secret_key_used() {
+            warn!("The configured `secret_key` is exposed and insecure.");
+            warn_!("The configured key is publicly published and thus insecure.");
+            warn_!("Try generating a new key with `head -c64 /dev/urandom | base64`.");
+        }
 
         // Initialize the router; check for collisions.
         let mut router = Router::new();

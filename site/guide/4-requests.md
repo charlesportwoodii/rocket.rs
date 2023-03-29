@@ -527,7 +527,7 @@ feature:
 
 ```toml
 ## in Cargo.toml
-rocket = { version = "0.5.0-rc.2", features = ["secrets"] }
+rocket = { version = "=0.5.0-rc.3", features = ["secrets"] }
 ```
 
 The API for retrieving, adding, and removing private cookies is identical except
@@ -705,7 +705,7 @@ complete example.
   feature can be enabled in the `Cargo.toml`:
 
   `
-  rocket = { version = "0.5.0-rc.2", features = ["json"] }
+  rocket = { version = "=0.5.0-rc.3", features = ["json"] }
   `
 
 ### Temporary Files
@@ -1595,7 +1595,7 @@ MyForm {
 ### Arbitrary Collections
 
 _Any_ collection can be expressed with any level of arbitrary nesting, maps, and
-sequences. Consider the extravagently contrived type:
+sequences. Consider the extravagantly contrived type:
 
 ```rust
 use std::collections::{BTreeMap, HashMap};

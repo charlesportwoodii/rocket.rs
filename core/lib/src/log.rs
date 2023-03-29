@@ -4,6 +4,7 @@ use std::fmt;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use is_terminal::IsTerminal;
 use serde::{de, Serialize, Serializer, Deserialize, Deserializer};
 use yansi::Paint;
 
@@ -21,11 +22,11 @@ macro_rules! define_log_macro {
     );
     ($name:ident ($indented:ident): $kind:ident, $target:expr, $d:tt) => (
         define_log_macro!($name: $kind, $target, $d);
-        define_log_macro!($indented: $kind, $target, $d);
+        define_log_macro!($indented: $kind, concat!($target, "::_"), $d);
     );
     ($kind:ident, $indented:ident) => (
         define_log_macro!($kind: $kind, module_path!(), $);
-        define_log_macro!($indented: $kind, "_", $);
+        define_log_macro!($indented: $kind, concat!(module_path!(), "::_"), $);
 
         pub use $indented;
     );
@@ -178,7 +179,7 @@ pub(crate) fn init(config: &crate::Config) {
     // Set Rocket-logger specific settings only if Rocket's logger is set.
     if ROCKET_LOGGER_SET.load(Ordering::Acquire) {
         // Rocket logs to stdout, so disable coloring if it's not a TTY.
-        if !atty::is(atty::Stream::Stdout) {
+        if !std::io::stdout().is_terminal() {
             Paint::disable();
         }
 

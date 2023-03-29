@@ -29,7 +29,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! rocket = "0.5.0-rc.2"
+//! rocket = "=0.5.0-rc.3"
 //! ```
 //!
 //! <small>Note that development versions, tagged with `-dev`, are not published
@@ -73,14 +73,14 @@
 //!
 //! ```toml
 //! [dependencies]
-//! rocket = { version = "0.5.0-rc.2", features = ["secrets", "tls", "json"] }
+//! rocket = { version = "=0.5.0-rc.3", features = ["secrets", "tls", "json"] }
 //! ```
 //!
 //! Conversely, HTTP/2 can be disabled:
 //!
 //! ```toml
 //! [dependencies]
-//! rocket = { version = "0.5.0-rc.2", default-features = false }
+//! rocket = { version = "=0.5.0-rc.3", default-features = false }
 //! ```
 //!
 //! [JSON (de)serialization]: crate::serde::json
@@ -184,11 +184,11 @@ mod phase;
 #[doc(inline)] pub use phase::{Phase, Build, Ignite, Orbit};
 #[doc(inline)] pub use error::Error;
 #[doc(inline)] pub use sentinel::Sentinel;
+#[doc(inline)] pub use crate::request::Request;
+#[doc(inline)] pub use crate::rocket::Rocket;
+#[doc(inline)] pub use crate::shutdown::Shutdown;
+#[doc(inline)] pub use crate::state::State;
 #[doc(inline)] pub use rocket_codegen::*;
-pub use crate::rocket::Rocket;
-pub use crate::request::Request;
-pub use crate::shutdown::Shutdown;
-pub use crate::state::State;
 
 /// Creates a [`Rocket`] instance with the default config provider: aliases
 /// [`Rocket::build()`].

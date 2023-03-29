@@ -135,13 +135,13 @@ use crate::request::Request;
 ///    [`Response::build_from()`] and/or use the [`merge()`](Response::merge())
 ///    or [`join()`](Response::join()) methods on the `Response` or
 ///    `ResponseBuilder` struct. Ensure that you document merging or joining
-///    behavior appropriatse.
+///    behavior appropriately.
 ///
 /// 3. Inspecting Requests
 ///
 ///    While tempting, a `Responder` that varies its functionality based on the
 ///    incoming request sacrifices its functionality being understood based
-///    purely on its type. By implication, gleaming the functionality of a
+///    purely on its type. By implication, gleaning the functionality of a
 ///    _handler_ from its type signature also becomes more difficult. You should
 ///    avoid varying responses based on the `Request` value as much as possible.
 ///
