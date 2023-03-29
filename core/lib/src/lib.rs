@@ -29,7 +29,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! rocket = "0.5.0-rc.2"
+//! rocket = "=0.5.0-rc.3"
 //! ```
 //!
 //! <small>Note that development versions, tagged with `-dev`, are not published
@@ -73,14 +73,14 @@
 //!
 //! ```toml
 //! [dependencies]
-//! rocket = { version = "0.5.0-rc.2", features = ["secrets", "tls", "json"] }
+//! rocket = { version = "=0.5.0-rc.3", features = ["secrets", "tls", "json"] }
 //! ```
 //!
 //! Conversely, HTTP/2 can be disabled:
 //!
 //! ```toml
 //! [dependencies]
-//! rocket = { version = "0.5.0-rc.2", default-features = false }
+//! rocket = { version = "=0.5.0-rc.3", default-features = false }
 //! ```
 //!
 //! [JSON (de)serialization]: crate::serde::json
@@ -184,14 +184,16 @@ mod phase;
 #[doc(inline)] pub use phase::{Phase, Build, Ignite, Orbit};
 #[doc(inline)] pub use error::Error;
 #[doc(inline)] pub use sentinel::Sentinel;
+#[doc(inline)] pub use crate::request::Request;
+#[doc(inline)] pub use crate::rocket::Rocket;
+#[doc(inline)] pub use crate::shutdown::Shutdown;
+#[doc(inline)] pub use crate::state::State;
 #[doc(inline)] pub use rocket_codegen::*;
 pub use crate::rocket::Rocket;
 pub use crate::request::Request;
 pub use crate::shutdown::Shutdown;
 pub use crate::state::State;
 pub use server::HyperRawBodyBytes;
-
-/// Creates a [`Rocket`] instance with the default config provider: aliases
 /// [`Rocket::build()`].
 pub fn build() -> Rocket<Build> {
     Rocket::build()
@@ -234,12 +236,13 @@ pub use async_trait::async_trait;
 
 /// WARNING: This is unstable! Do not use this method outside of Rocket!
 #[doc(hidden)]
-pub fn async_run<F, R>(fut: F, workers: usize, force_end: bool, name: &str) -> R
+pub fn async_run<F, R>(fut: F, workers: usize, sync: usize, force_end: bool, name: &str) -> R
     where F: std::future::Future<Output = R>
 {
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .thread_name(name)
         .worker_threads(workers)
+        .max_blocking_threads(sync)
         .enable_all()
         .build()
         .expect("create tokio runtime");
@@ -255,7 +258,7 @@ pub fn async_run<F, R>(fut: F, workers: usize, force_end: bool, name: &str) -> R
 /// WARNING: This is unstable! Do not use this method outside of Rocket!
 #[doc(hidden)]
 pub fn async_test<R>(fut: impl std::future::Future<Output = R>) -> R {
-    async_run(fut, 1, true, "rocket-worker-test-thread")
+    async_run(fut, 1, 32, true, "rocket-worker-test-thread")
 }
 
 /// WARNING: This is unstable! Do not use this method outside of Rocket!
@@ -264,8 +267,8 @@ pub fn async_main<R>(fut: impl std::future::Future<Output = R> + Send) -> R {
     // FIXME: These config values won't reflect swaps of `Rocket` in attach
     // fairings with different config values, or values from non-Rocket configs.
     // See tokio-rs/tokio#3329 for a necessary solution in `tokio`.
-    let config = Config::from(Config::figment());
-    async_run(fut, config.workers, config.shutdown.force, "rocket-worker-thread")
+    let c = Config::from(Config::figment());
+    async_run(fut, c.workers, c.max_blocking, c.shutdown.force, "rocket-worker-thread")
 }
 
 /// Executes a `future` to completion on a new tokio-based Rocket async runtime.

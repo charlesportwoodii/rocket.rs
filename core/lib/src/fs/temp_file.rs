@@ -33,7 +33,7 @@ use either::Either;
 /// 1. A `TempFile` is created at random path `foo`.
 /// 2. The system cleaner removes the file at path `foo`.
 /// 3. Another application creates a file at path `foo`.
-/// 4. The `TempFile`, ostesnsibly at path, `foo`, is persisted unexpectedly
+/// 4. The `TempFile`, ostensibly at path `foo`, is persisted unexpectedly
 ///    with contents different from those in step 1.
 ///
 /// To safe-guard against this issue, you should ensure that your temporary file
@@ -128,7 +128,7 @@ impl<'v> TempFile<'v> {
     ///
     /// # Cross-Device Persistence
     ///
-    /// Attemping to persist a temporary file across logical devices (or mount
+    /// Attempting to persist a temporary file across logical devices (or mount
     /// points) will result in an error. This is a limitation of the underlying
     /// OS. Your options are thus:
     ///
@@ -458,7 +458,8 @@ impl<'v> TempFile<'v> {
 
         let mut file = File::from_std(file);
         let fut = data.open(limit).stream_to(tokio::io::BufWriter::new(&mut file));
-        let n = fut.await?;
+        let n = fut.await;
+        let n = n?;
         let temp_file = TempFile::File {
             content_type, file_name,
             path: Either::Left(temp_path),

@@ -15,8 +15,8 @@ use crate::outcome::Outcome;
 use crate::request::ConnectionMeta;
 use crate::{route, Config, Data, Orbit, Request, Response, Rocket};
 
-use crate::http::private::{Connection, Incoming, Listener, TcpListener};
 use crate::http::{hyper, uri::Origin, Header, Method, Status};
+use crate::http::private::{TcpListener, Listener, Connection, Incoming};
 
 // A token returned to force the execution of one method before another.
 pub(crate) struct RequestToken;
@@ -93,12 +93,11 @@ async fn hyper_service_fn(
                 rocket.send_response(response, tx).await;
             }
             Err(e) => {
-                // TODO: We don't have a request to pass in, so we fabricate
-                // one. This is weird. Instead, let the user know that we failed
-                // to parse a request (a special handler?).
-                error!("Bad incoming request: {}", e);
-                let dummy = Request::new(&rocket, Method::Get, Origin::ROOT);
-                let response = rocket.handle_error(Status::BadRequest, &dummy).await;
+                warn!("Bad incoming HTTP request.");
+                e.errors.iter().for_each(|e| warn_!("Error: {}.", e));
+                warn_!("Dispatching salvaged request to catcher: {}.", e.request);
+
+                let response = rocket.handle_error(Status::BadRequest, &e.request).await;
                 rocket.send_response(response, tx).await;
             }
         }
@@ -361,7 +360,7 @@ impl Rocket<Orbit> {
 
         // If it fails and it's not a 500, try the 500 catcher.
         if status != Status::InternalServerError {
-            error_!("Catcher failed. Attemping 500 error catcher.");
+            error_!("Catcher failed. Attempting 500 error catcher.");
             status = Status::InternalServerError;
             if let Ok(r) = self.invoke_catcher(status, req).await {
                 return r;
@@ -492,7 +491,7 @@ impl Rocket<Orbit> {
             .serve(hyper::service::make_service_fn(service_fn))
             .with_graceful_shutdown(shutdown.clone());
 
-        // This deserves some exaplanation.
+        // This deserves some explanation.
         //
         // This is largely to deal with Hyper's dreadful and largely nonexistent
         // handling of shutdown, in general, nevermind graceful.
@@ -556,13 +555,13 @@ impl Rocket<Orbit> {
                                 Ok(rocket)
                             }
                             Err(rocket) => {
-                                warn!("Server failed to shutdown cooperatively.");
+                                warn!("Shutdown failed: outstanding background I/O.");
                                 Err(Error::shutdown(rocket, None))
                             }
                         }
                     }
                     _ = &mut shutdown_timer => {
-                        warn!("Server failed to shutdown cooperatively.");
+                        warn!("Shutdown failed: server executing after timeouts.");
                         return Err(Error::shutdown(rocket.clone(), None));
                     },
                 }

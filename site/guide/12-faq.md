@@ -54,7 +54,7 @@ looks like:
 
 | Framework            | Dependencies | Build Time |
 |----------------------|--------------|------------|
-| Rocket 0.5-rc.2      | 175          | 50s        |
+| Rocket 0.5-rc.2      | 151          | 50s        |
 | Actix-Web 4.0.1      | 155          | 40s        |
 | Tide 0.16            | 202          | 37s        |
 | Warp 0.3.2           | 132          | 30s        |
@@ -113,7 +113,7 @@ non-exhaustive list of caveats:
      DDoS attacks or certain DoS attacks which can be mitigated by an external
      service.
 
-  2. Use a TLS termination proxy (perhaps from 1.) for zero-downtown certificate
+  2. Use a TLS termination proxy (perhaps from 1.) for zero-downtime certificate
      rotation.
 
   3. Properly configure your databases and database pools, especially with
@@ -276,7 +276,7 @@ Can I, and if so how, do I use WebSockets?
 
 Rocket doesn't support WebSockets quite yet. We're [working on it].
 
-That being said, Rocket _does_ suport [Server-Sent Events], which allows for
+That being said, Rocket _does_ support [Server-Sent Events], which allows for
 real-time _unidirectional_ communication from the server to the client. This is
 often sufficient for many of the applications that WebSockets are typically used
 for. For instance, the [chat example] uses SSE to implement a real-time,
@@ -362,7 +362,7 @@ out-of-the-box, and you can implement your own, too. See the following:
   * Parameter Guards: [`FromParam`]
   * Multi-Segment Guards: [`FromSegments`]
   * Data Guards: [`FromData`]
-  * Form Guards: [`FromFrom`]
+  * Form Guards: [`FromForm`]
   * Request Guards: [`FromRequest`]
 </div>
 </details>
@@ -371,7 +371,7 @@ out-of-the-box, and you can implement your own, too. See the following:
 [`FromParam`]: @api/rocket/request/trait.FromParam.html
 [`FromSegments`]: @api/rocket/request/trait.FromSegments.html
 [`FromData`]: @api/rocket/data/trait.FromData.html
-[`FromFrom`]: @api/rocket/form/trait.FromForm.html
+[`FromForm`]: @api/rocket/form/trait.FromForm.html
 [`FromRequest`]: @api/rocket/request/trait.FromRequest.html
 
 <details id="response-headers">
@@ -644,7 +644,7 @@ is to depend on a `contrib` library from git while also depending on a
 `crates.io` version of Rocket or vice-versa:
 
 ```toml
-rocket = "0.5.0-rc.2"
+rocket = "=0.5.0-rc.3"
 rocket_db_pools = { git = "https://github.com/SergioBenitez/Rocket.git" }
 ```
 

@@ -17,24 +17,28 @@ is configured with. This means that no matter which configuration provider
 Rocket is asked to use, it must be able to read the following configuration
 values:
 
-| key            | kind              | description                                     | debug/release default   |
-|----------------|-------------------|-------------------------------------------------|-------------------------|
-| `address`      | `IpAddr`          | IP address to serve on                          | `127.0.0.1`             |
-| `port`         | `u16`             | Port to serve on.                               | `8000`                  |
-| `workers`*     | `usize`           | Number of threads to use for executing futures. | cpu core count          |
-| `ident`        | `string`, `false` | If and how to identify via the `Server` header. | `"Rocket"`              |
-| `keep_alive`   | `u32`             | Keep-alive timeout seconds; disabled when `0`.  | `5`                     |
-| `log_level`    | [`LogLevel`]      | Max level to log. (off/normal/debug/critical)   | `normal`/`critical`     |
-| `cli_colors`   | `bool`            | Whether to use colors and emoji when logging.   | `true`                  |
-| `secret_key`   | [`SecretKey`]     | Secret key for signing and encrypting values.   | `None`                  |
-| `tls`          | [`TlsConfig`]     | TLS configuration, if any.                      | `None`                  |
-| `limits`       | [`Limits`]        | Streaming read size limits.                     | [`Limits::default()`]   |
-| `limits.$name` | `&str`/`uint`     | Read limit for `$name`.                         | form = "32KiB"         |
-| `ctrlc`        | `bool`            | Whether `ctrl-c` initiates a server shutdown.   | `true`                  |
-| `shutdown`*    | [`Shutdown`]      | Graceful shutdown configuration.                | [`Shutdown::default()`] |
+| key             | kind              | description                                     | debug/release default   |
+|-----------------|-------------------|-------------------------------------------------|-------------------------|
+| `address`       | `IpAddr`          | IP address to serve on                          | `127.0.0.1`             |
+| `port`          | `u16`             | Port to serve on.                               | `8000`                  |
+| `workers`*      | `usize`           | Number of threads to use for executing futures. | cpu core count          |
+| `max_blocking`* | `usize`           | Limit on threads to start for blocking tasks.   | `512`                   |
+| `ident`         | `string`, `false` | If and how to identify via the `Server` header. | `"Rocket"`              |
+| `ip_header`     | `string`, `false` | IP header to inspect to get [client's real IP]. | `"X-Real-IP"`           |
+| `keep_alive`    | `u32`             | Keep-alive timeout seconds; disabled when `0`.  | `5`                     |
+| `log_level`     | [`LogLevel`]      | Max level to log. (off/normal/debug/critical)   | `normal`/`critical`     |
+| `cli_colors`    | `bool`            | Whether to use colors and emoji when logging.   | `true`                  |
+| `secret_key`    | [`SecretKey`]     | Secret key for signing and encrypting values.   | `None`                  |
+| `tls`           | [`TlsConfig`]     | TLS configuration, if any.                      | `None`                  |
+| `limits`        | [`Limits`]        | Streaming read size limits.                     | [`Limits::default()`]   |
+| `limits.$name`  | `&str`/`uint`     | Read limit for `$name`.                         | form = "32KiB"          |
+| `ctrlc`         | `bool`            | Whether `ctrl-c` initiates a server shutdown.   | `true`                  |
+| `shutdown`*     | [`Shutdown`]      | Graceful shutdown configuration.                | [`Shutdown::default()`] |
 
-<small>* Note: the `workers` and `shutdown.force` configuration parameters are
-only read from the [default provider](#default-provider).</small>
+<small>* Note: the `workers`, `max_blocking`, and `shutdown.force` configuration
+parameters are only read from the [default provider](#default-provider).</small>
+
+[client's real IP]: @api/rocket/request/struct.Request.html#method.real_ip
 
 ### Profiles
 
@@ -122,14 +126,16 @@ limits = { json = "10MiB" }
 port = 9001
 
 ## set only when compiled in release mode, i.e, `cargo build --release`
-## don't use this secret_key! generate your own and keep it private!
 [release]
 port = 9999
-secret_key = "hPRYyVRiMyxpw5sBB1XeCMN1kFsDCqKvBi2QJxBVHQk="
+ip_header = false
+# NOTE: Don't (!) use this key! Generate your own and keep it private!
+#       e.g. via `head -c64 /dev/urandom | base64`
+secret_key = "hPrYyЭRiMyµ5sBB1π+CMæ1køFsåqKvBiQJxBVHQk="
 ```
 
 The following is a `Rocket.toml` file with all configuration options set for
-demonstratation purposes. You **do not** and _should not_ set a value for
+demonstration purposes. You **do not** and _should not_ set a value for
 configuration options needlessly, preferring to use the default value when
 sensible.
 
@@ -138,13 +144,16 @@ sensible.
 address = "127.0.0.1"
 port = 8000
 workers = 16
+max_blocking = 512
 keep_alive = 5
 ident = "Rocket"
+ip_header = "X-Real-IP" # set to `false` to disable
 log_level = "normal"
 temp_dir = "/tmp"
 cli_colors = true
-## NOTE: Don't (!) use this key! Generate your own!
-secret_key = "hPRYyVRiMyxpw5sBB1XeCMN1kFsDCqKvBi2QJxBVHQk="
+# NOTE: Don't (!) use this key! Generate your own and keep it private!
+#       e.g. via `head -c64 /dev/urandom | base64`
+secret_key = "hPrYyЭRiMyµ5sBB1π+CMæ1køFsåqKvBiQJxBVHQk="
 
 [default.limits]
 form = "64 kB"
@@ -228,7 +237,7 @@ Security). To enable TLS support:
 
    ```toml,ignore
    [dependencies]
-   rocket = { version = "0.5.0-rc.2", features = ["tls"] }
+   rocket = { version = "=0.5.0-rc.3", features = ["tls"] }
    ```
 
   2. Configure a TLS certificate chain and private key via the `tls.key` and
@@ -237,20 +246,20 @@ Security). To enable TLS support:
 
    ```toml,ignore
    [default.tls]
-   key = "path/to/key.pem"     # Path or bytes to DER-encoded ASN.1 PKCS#1/#8 key.
+   key = "path/to/key.pem"     # Path or bytes to DER-encoded ASN.1 PKCS#1/#8 or SEC1 key.
    certs = "path/to/certs.pem" # Path or bytes to DER-encoded X.509 TLS cert chain.
    ```
 
 The `tls` parameter is expected to be a dictionary that deserializes into a
 [`TlsConfig`] structure:
 
-| key                          | required  | type                                                  |
-|------------------------------|-----------|-------------------------------------------------------|
-| `key`                        | **_yes_** | Path or bytes to DER-encoded ASN.1 PKCS#1/#8 key.     |
-| `certs`                      | **_yes_** | Path or bytes to DER-encoded X.509 TLS cert chain.    |
-| `ciphers`                    | no        | Array of [`CipherSuite`]s to enable.                  |
-| `prefer_server_cipher_order` | no        | Boolean for whether to [prefer server cipher suites]. |
-| `mutual`                     | no        | A map with [mutual TLS] configuration.                |
+| key                          | required  | type                                                          |
+|------------------------------|-----------|---------------------------------------------------------------|
+| `key`                        | **_yes_** | Path or bytes to DER-encoded ASN.1 PKCS#1/#8 or SEC1 key.     |
+| `certs`                      | **_yes_** | Path or bytes to DER-encoded X.509 TLS cert chain.            |
+| `ciphers`                    | no        | Array of [`CipherSuite`]s to enable.                          |
+| `prefer_server_cipher_order` | no        | Boolean for whether to [prefer server cipher suites].         |
+| `mutual`                     | no        | A map with [mutual TLS] configuration.                        |
 
 [`CipherSuite`]: @api/rocket/config/enum.CipherSuite.html
 [prefer server cipher suites]: @api/rocket/config/struct.TlsConfig.html#method.with_preferred_server_cipher_order
@@ -293,7 +302,7 @@ enabled and support configured via the `tls.mutual` config parameter:
 
    ```toml,ignore
    [dependencies]
-   rocket = { version = "0.5.0-rc.2", features = ["mtls"] }
+   rocket = { version = "=0.5.0-rc.3", features = ["mtls"] }
    ```
 
    This implicitly enables the `tls` feature.
@@ -357,6 +366,21 @@ configuration value cannot be reconfigured or be configured from sources other
 than those provided by [`Config::figment()`]. In other words, only the values
 set by the `ROCKET_WORKERS` environment variable or in the `workers` property of
 `Rocket.toml` will be considered - all other `workers` values are ignored.
+
+The `max_blocking` parameter sets an upper limit on the number of threads the
+underlying `async` runtime will spawn to execute potentially blocking,
+synchronous tasks via [`spawn_blocking`] or equivalent. Similar to the `workers`
+parameter, `max_blocking` cannot be reconfigured or be configured from sources
+other than those provided by [`Config::figment()`]. Unlike `workers`, threads
+corresponding to `max_blocking` are not always active and will exit if idling.
+In general, the default value of `512` should not be changed unless physical or
+virtual resources are scarce. Rocket only executes work on blocking threads when
+required such as when performing file system I/O via [`TempFile`] or wrapping
+synchronous work via [`rocket_sync_db_pools`].
+
+[`spawn_blocking`]: @tokio/task/fn.spawn_blocking.html
+[`TempFile`]: @api/rocket/fs/enum.TempFile.html
+[`rocket_sync_db_pools`]: @api/rocket_sync_db_pools/index.html
 
 ## Extracting Values
 

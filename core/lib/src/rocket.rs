@@ -42,7 +42,7 @@ use crate::log::PaintExt;
 /// * **Ignite**: _verification and finalization of configuration_
 ///
 ///   An instance in the [`Ignite`] phase is in its final configuration,
-///   available via [`Rocket::config()`]. Barring user-supplied iterior
+///   available via [`Rocket::config()`]. Barring user-supplied interior
 ///   mutation, application state is guaranteed to remain unchanged beyond this
 ///   point. An instance in the ignite phase can be launched into orbit to serve
 ///   requests via [`Rocket::launch()`].
@@ -66,7 +66,7 @@ use crate::log::PaintExt;
 ///   }
 ///   ```
 ///
-/// This generates a `main` funcion with an `async` runtime that runs the
+/// This generates a `main` function with an `async` runtime that runs the
 /// returned `Rocket` instance.
 ///
 /// * **Manual Launching**
@@ -133,7 +133,6 @@ use crate::log::PaintExt;
 ///       rocket::build()
 ///   }
 ///   ```
-#[must_use]
 pub struct Rocket<P: Phase>(pub(crate) P::State);
 
 impl Rocket<Build> {
@@ -152,6 +151,7 @@ impl Rocket<Build> {
     ///     rocket::build()
     /// }
     /// ```
+    #[must_use]
     #[inline(always)]
     pub fn build() -> Self {
         Rocket::custom(Config::figment())
@@ -178,6 +178,7 @@ impl Rocket<Build> {
     ///     rocket::custom(figment)
     /// }
     /// ```
+    #[must_use]
     pub fn custom<T: Provider>(provider: T) -> Self {
         // We initialize the logger here so that logging from fairings and so on
         // are visible; we use the final config to set a max log-level in ignite
@@ -196,7 +197,7 @@ impl Rocket<Build> {
     /// A [`Figment`] generated from the current `provider` can _always_ be
     /// retrieved via [`Rocket::figment()`]. However, because the provider can
     /// be changed at any point prior to ignition, a [`Config`] can only be
-    /// retrieved in the ignite or orbit phases, or by manually extracing one
+    /// retrieved in the ignite or orbit phases, or by manually extracting one
     /// from a particular figment.
     ///
     /// # Example
@@ -235,6 +236,7 @@ impl Rocket<Build> {
     /// # Ok(())
     /// # });
     /// ```
+    #[must_use]
     pub fn configure<T: Provider>(mut self, provider: T) -> Self {
         self.figment = Figment::from(provider);
         self
@@ -334,6 +336,7 @@ impl Rocket<Build> {
     ///     rocket::build().mount("/hello", vec![hi_route])
     /// }
     /// ```
+    #[must_use]
     #[track_caller]
     pub fn mount<'a, B, R>(self, base: B, routes: R) -> Self
         where B: TryInto<Origin<'a>> + Clone + fmt::Display,
@@ -363,7 +366,7 @@ impl Rocket<Build> {
     ///     "Whoops! Looks like we messed up."
     /// }
     ///
-    /// #[catch(400)]
+    /// #[catch(404)]
     /// fn not_found(req: &Request) -> String {
     ///     format!("I couldn't find '{}'. Try something else?", req.uri())
     /// }
@@ -373,6 +376,7 @@ impl Rocket<Build> {
     ///     rocket::build().register("/", catchers![internal_error, not_found])
     /// }
     /// ```
+    #[must_use]
     pub fn register<'a, B, C>(self, base: B, catchers: C) -> Self
         where B: TryInto<Origin<'a>> + Clone + fmt::Display,
               B::Error: fmt::Display,
@@ -424,20 +428,21 @@ impl Rocket<Build> {
     ///         .mount("/", routes![int, string])
     /// }
     /// ```
+    #[must_use]
     pub fn manage<T>(self, state: T) -> Self
         where T: Send + Sync + 'static
     {
         let type_name = std::any::type_name::<T>();
         if !self.state.set(state) {
             error!("state for type '{}' is already being managed", type_name);
-            panic!("aborting due to duplicately managed state");
+            panic!("aborting due to duplicated managed state");
         }
 
         self
     }
 
     /// Attaches a fairing to this instance of Rocket. No fairings are eagerly
-    /// excuted; fairings are executed at their appropriate time.
+    /// executed; fairings are executed at their appropriate time.
     ///
     /// If the attached fairing is _fungible_ and a fairing of the same name
     /// already exists, this fairing replaces it.
@@ -457,6 +462,7 @@ impl Rocket<Build> {
     ///         })))
     /// }
     /// ```
+    #[must_use]
     pub fn attach<F: Fairing>(mut self, fairing: F) -> Self {
         self.fairings.add(Box::new(fairing));
         self
@@ -524,7 +530,11 @@ impl Rocket<Build> {
                 config.secret_key = crate::config::SecretKey::generate()
                     .unwrap_or_else(crate::config::SecretKey::zero);
             }
-        };
+        } else if config.known_secret_key_used() {
+            warn!("The configured `secret_key` is exposed and insecure.");
+            warn_!("The configured key is publicly published and thus insecure.");
+            warn_!("Try generating a new key with `head -c64 /dev/urandom | base64`.");
+        }
 
         // Initialize the router; check for collisions.
         let mut router = Router::new();
@@ -565,14 +575,14 @@ fn log_items<T, I, B, O>(e: &str, t: &str, items: I, base: B, origin: O)
 {
     let mut items: Vec<_> = items.collect();
     if !items.is_empty() {
-        launch_info!("{}{}:", Paint::emoji(e), Paint::magenta(t));
+        launch_meta!("{}{}:", Paint::emoji(e), Paint::magenta(t));
     }
 
     items.sort_by_key(|i| origin(i).path().as_str().chars().count());
     items.sort_by_key(|i| origin(i).path().segments().len());
     items.sort_by_key(|i| base(i).path().as_str().chars().count());
     items.sort_by_key(|i| base(i).path().segments().len());
-    items.iter().for_each(|i| launch_info_!("{}", i));
+    items.iter().for_each(|i| launch_meta_!("{}", i));
 }
 
 impl Rocket<Ignite> {
