@@ -15,7 +15,7 @@ use crate::outcome::Outcome;
 use crate::request::ConnectionMeta;
 use crate::{route, Config, Data, Orbit, Request, Response, Rocket};
 
-use crate::http::{hyper, uri::Origin, Header, Method, Status};
+use crate::http::{hyper, Header, Method, Status};
 use crate::http::private::{TcpListener, Listener, Connection, Incoming};
 
 // A token returned to force the execution of one method before another.
